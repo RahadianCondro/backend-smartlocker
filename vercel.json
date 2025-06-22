@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "next.config.js",
+      "use": "@vercel/next"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "MIDTRANS_SERVER_KEY": "@midtrans-server-key",
+    "MIDTRANS_CLIENT_KEY": "@midtrans-client-key",
+    "NEXT_PUBLIC_BACKEND_URL": "@backend-url",
+    "NEXT_PUBLIC_SUCCESS_URL": "@success-url",
+    "NEXT_PUBLIC_ERROR_URL": "@error-url",
+    "NEXT_PUBLIC_UNFINISH_URL": "@unfinish-url",
+    "FIREBASE_PROJECT_ID": "@firebase-project-id",
+    "FIREBASE_PRIVATE_KEY": "@firebase-private-key",
+    "FIREBASE_CLIENT_EMAIL": "@firebase-client-email"
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
+      ]
+    }
+  ]
+}
