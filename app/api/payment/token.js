@@ -2,17 +2,14 @@ import { NextResponse } from 'next/server';
 import midtransClient from 'midtrans-client';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { createLogger, format, transports } from 'winston';
-import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, cert } from 'firebase-admin/app';
 import validator from 'validator';
 
 // Inisialisasi Logger
 const logger = createLogger({
   level: 'info',
-  format: format.combine(
-    format.timestamp(),
-    format.json()
-  ),
+  format: format.combine(format.timestamp(), format.json()),
   transports: [
     new transports.File({ filename: 'logs/error.log', level: 'error' }),
     new transports.File({ filename: 'logs/combined.log' })
@@ -21,8 +18,8 @@ const logger = createLogger({
 
 // Inisialisasi Rate Limiter
 const rateLimiter = new RateLimiterMemory({
-  points: 10, // 10 requests
-  duration: 60 // per 60 seconds
+  points: 10,
+  duration: 60
 });
 
 // Inisialisasi Firebase
@@ -38,7 +35,8 @@ const db = getFirestore(firebaseApp);
 export async function POST(request) {
   try {
     // Rate Limiting
-    await rateLimiter.consume(request.headers.get('x-forwarded-for') || 'unknown');
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    await rateLimiter.consume(ip);
 
     // Validasi Input
     const { orderId, amount, email, uid } = await request.json();
@@ -102,7 +100,7 @@ export async function POST(request) {
     return NextResponse.json({ token: transaction.token }, { status: 200 });
   } catch (error) {
     if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
-      logger.warn('Rate limit terlampaui', { ip: request.headers.get('x-forwarded-for') });
+      logger.warn('Rate limit terlampaui', { ip });
       return NextResponse.json({ error: 'Terlalu banyak permintaan, coba lagi nanti' }, { status: 429 });
     }
 
@@ -117,9 +115,3 @@ export async function POST(request) {
     return NextResponse.json({ error: errorMessage }, { status });
   }
 }
-
-export const config = {
-  api: {
-    bodyParser: true
-  }
-};

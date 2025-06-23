@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server';
+import { Buffer } from 'buffer';
 import axios from 'axios';
-require('dotenv').config();
+import validator from 'validator';
+import { createLogger, format, transports } from 'winston';
 
-const serverKey = process.env.MIDTRANS_SERVER_KEY;
+// Inisialisasi Logger
+const logger = createLogger({
+  level: 'info',
+  format: format.combine(format.timestamp(), format.json()),
+  transports: [
+    new transports.File({ filename: 'logs/error.log', level: 'error' }),
+    new transports.File({ filename: 'logs/combined.log' })
+  ]
+});
 
 export async function GET(request, { params }) {
   try {
@@ -10,44 +20,35 @@ export async function GET(request, { params }) {
     if (!orderId) {
       return NextResponse.json({ error: 'Parameter orderId diperlukan' }, { status: 400 });
     }
-    console.log(`Menerima permintaan status transaksi untuk orderId: ${orderId}`);
+    if (!validator.isLength(orderId, { min: 1, max: 50 })) {
+      return NextResponse.json({ error: 'orderId harus antara 1-50 karakter' }, { status: 400 });
+    }
 
-    const requestHeaders = {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Authorization': 'Basic ' + Buffer.from(serverKey + ':').toString('base64'),
-      'User-Agent': 'SmartLocker-Backend/1.0',
-    };
-    console.log('Permintaan ke Midtrans:', {
-      url: `https://api.sandbox.midtrans.com/v2/${orderId}/status`,
-      headers: { ...requestHeaders, Authorization: 'Basic [REDACTED]' },
-    });
+    logger.info('Menerima permintaan status transaksi', { orderId });
 
     const response = await axios.get(
       `https://api.sandbox.midtrans.com/v2/${orderId}/status`,
-      { headers: requestHeaders }
+      {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Basic ' + Buffer.from(process.env.MIDTRANS_SERVER_KEY + ':').toString('base64')
+        }
+      }
     );
 
-    console.log('Respon Midtrans:', {
-      status: response.status,
-      headers: response.headers,
-      data: response.data,
-    });
+    logger.info('Berhasil mendapatkan status transaksi', { orderId, status: response.data.transaction_status });
+
     return NextResponse.json(response.data, { status: 200 });
   } catch (error) {
     const status = error.response?.status || 500;
     const errorMessage = error.response?.data?.error_messages?.join(', ') || error.message;
-    const errorData = error.response?.data || null;
-    console.error('Gagal mendapatkan status transaksi:', {
+    logger.error('Gagal mendapatkan status transaksi', {
       status,
-      headers: error.response?.headers || null,
-      data: errorData,
       message: errorMessage,
-      request: {
-        url: `https://api.sandbox.midtrans.com/v2/${orderId}/status`,
-        headers: { ...error.response?.config?.headers, Authorization: 'Basic [REDACTED]' },
-      },
+      orderId: params.orderId || 'unknown'
     });
-    return NextResponse.json({ error: errorMessage, details: errorData }, { status });
+
+    return NextResponse.json({ error: errorMessage }, { status });
   }
 }

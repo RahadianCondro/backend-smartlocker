@@ -7,10 +7,7 @@ import validator from 'validator';
 // Inisialisasi Logger
 const logger = createLogger({
   level: 'info',
-  format: format.combine(
-    format.timestamp(),
-    format.json()
-  ),
+  format: format.combine(format.timestamp(), format.json()),
   transports: [
     new transports.File({ filename: 'logs/error.log', level: 'error' }),
     new transports.File({ filename: 'logs/combined.log' })
@@ -26,7 +23,8 @@ const rateLimiter = new RateLimiterMemory({
 export async function GET(request, { params }) {
   try {
     // Rate Limiting
-    await rateLimiter.consume(request.headers.get('x-forwarded-for') || 'unknown');
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    await rateLimiter.consume(ip);
 
     const { orderId } = params;
     if (!orderId) {

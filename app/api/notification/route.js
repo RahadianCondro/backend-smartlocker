@@ -1,23 +1,31 @@
 import { NextResponse } from 'next/server';
+import { createLogger, format, transports } from 'winston';
+
+// Inisialisasi Logger
+const logger = createLogger({
+  level: 'info',
+  format: format.combine(format.timestamp(), format.json()),
+  transports: [
+    new transports.File({ filename: 'logs/error.log', level: 'error' }),
+    new transports.File({ filename: 'logs/combined.log' })
+  ]
+});
 
 export async function POST(request) {
   try {
-    const body = await request.json();
-    console.log('Notifikasi Midtrans diterima:', body);
-
-    const { order_id, transaction_status, transaction_id } = body;
-    if (transaction_status === 'settlement' || transaction_status === 'capture') {
-      console.log(`Transaksi ${order_id} berhasil: ${transaction_status}`);
-      // Tambahkan logika untuk memperbarui Firestore
-    } else if (transaction_status === 'pending') {
-      console.log(`Transaksi ${order_id} masih tertunda`);
-    } else {
-      console.log(`Transaksi ${order_id} gagal: ${transaction_status}`);
+    const { message, userId } = await request.json();
+    if (!message || !userId) {
+      return NextResponse.json({ error: 'Parameter message dan userId diperlukan' }, { status: 400 });
     }
 
-    return NextResponse.json({ status: 'OK' }, { status: 200 });
+    logger.info('Mengirim notifikasi', { userId, message });
+
+    // Simulasi pengiriman notifikasi (ganti dengan logika sebenarnya, misalnya Firebase Cloud Messaging)
+    console.log(`Notifikasi ke user ${userId}: ${message}`);
+
+    return NextResponse.json({ message: 'Notifikasi dikirim' }, { status: 200 });
   } catch (error) {
-    console.error('Gagal memproses notifikasi:', error);
-    return NextResponse.json({ error: 'Gagal memproses notifikasi' }, { status: 500 });
+    logger.error('Gagal mengirim notifikasi', { error: error.message });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
