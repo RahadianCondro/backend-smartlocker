@@ -1,22 +1,18 @@
 import { NextResponse } from 'next/server';
 
-// Fallback jika variabel lingkungan tidak didefinisikan
 const ALLOWED_ORIGINS = process.env.NEXT_PUBLIC_BACKEND_URL
   ? [process.env.NEXT_PUBLIC_BACKEND_URL]
-  : ['https://backend-smartlocker-lyw4ch2vo-rahadiancondros-projects.vercel.app'];
+  : ['http://localhost:3000', 'https://backend-smartlocker-d3gq5t8ju-rahadiancondros-projects.vercel.app', 'https://localhost'];
 
 export function middleware(request) {
   try {
     const response = NextResponse.next();
-
-    // Header Keamanan
     response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' https://app.sandbox.midtrans.com");
     response.headers.set('X-XSS-Protection', '1; mode=block');
     response.headers.set('X-Content-Type-Options', 'nosniff');
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-    // CORS
     const origin = request.headers.get('origin') || '';
     if (ALLOWED_ORIGINS.includes(origin)) {
       response.headers.set('Access-Control-Allow-Origin', origin);

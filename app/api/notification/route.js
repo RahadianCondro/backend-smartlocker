@@ -20,7 +20,7 @@ export async function POST(request) {
 
     logger.info('Mengirim notifikasi', { userId, message });
 
-    // Simulasi pengiriman notifikasi (ganti dengan logika sebenarnya, misalnya Firebase Cloud Messaging)
+    // Simulasi pengiriman notifikasi (ganti dengan Firebase Cloud Messaging jika diperlukan)
     console.log(`Notifikasi ke user ${userId}: ${message}`);
 
     return NextResponse.json({ message: 'Notifikasi dikirim' }, { status: 200 });

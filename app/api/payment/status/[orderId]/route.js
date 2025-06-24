@@ -16,8 +16,8 @@ const logger = createLogger({
 
 // Inisialisasi Rate Limiter
 const rateLimiter = new RateLimiterMemory({
-  points: 20, // 20 requests
-  duration: 60 // per 60 seconds
+  points: 20,
+  duration: 60
 });
 
 export async function GET(request, { params }) {
@@ -26,7 +26,8 @@ export async function GET(request, { params }) {
     const ip = request.headers.get('x-forwarded-for') || 'unknown';
     await rateLimiter.consume(ip);
 
-    const { orderId } = params;
+    // Await params untuk mendapatkan orderId
+    const { orderId } = await params;
     if (!orderId) {
       return NextResponse.json({ error: 'Parameter orderId diperlukan' }, { status: 400 });
     }
@@ -50,7 +51,7 @@ export async function GET(request, { params }) {
     return NextResponse.json(statusResponse, { status: 200 });
   } catch (error) {
     if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
-      logger.warn('Rate limit terlampaui', { ip: request.headers.get('x-forwarded-for') });
+      logger.warn('Rate limit terlampaui', { ip });
       return NextResponse.json({ error: 'Terlalu banyak permintaan, coba lagi nanti' }, { status: 429 });
     }
 
